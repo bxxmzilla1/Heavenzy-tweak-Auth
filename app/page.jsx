@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 // Leaflet touches `window`, so the map must be client-only (no SSR).
 const MapView = dynamic(() => import("../components/MapView"), { ssr: false });
 
-const ONLINE_MS = 2 * 60 * 1000;
+const STALE_MS = 35 * 1000; // online = active app seen within this window
 
 export default function Page() {
   const [authed, setAuthed] = useState(false);
@@ -107,7 +107,7 @@ export default function Page() {
   }
 
   const onlineCount = rows.filter(
-    (r) => r.last_seen && Date.now() - new Date(r.last_seen).getTime() < ONLINE_MS
+    (r) => r.active && r.last_seen && Date.now() - new Date(r.last_seen).getTime() < STALE_MS
   ).length;
 
   return (

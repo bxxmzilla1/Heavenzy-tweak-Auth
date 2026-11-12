@@ -17,9 +17,13 @@ create table if not exists public.presence (
   country     text,
   ip          text,
   source      text,                                   -- 'gps' | 'ip'
+  active      boolean not null default false,          -- app is in the foreground right now
   claimed_at  timestamptz not null default now(),
   last_seen   timestamptz not null default now()
 );
+
+-- If the table already existed from an earlier run, add the foreground flag.
+alter table public.presence add column if not exists active boolean not null default false;
 
 -- Keep claimed_at pinned to the moment a NEW device took over (device_id changed), while last_seen
 -- advances on every heartbeat.

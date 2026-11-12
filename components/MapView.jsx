@@ -5,7 +5,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
 
-const ONLINE_MS = 2 * 60 * 1000; // "online" if seen in the last 2 minutes
+// Online = the app is in the foreground (active) AND it has checked in recently. The staleness
+// window catches an app that was force-killed while foregrounded and never sent a background update.
+const STALE_MS = 35 * 1000;
 
 // Stable icon instances so the CSS pulse animation isn't restarted on every 1s refresh.
 const onlineIcon = L.divIcon({
@@ -24,8 +26,8 @@ const offlineIcon = L.divIcon({
 });
 
 function isOnline(row) {
-  if (!row.last_seen) return false;
-  return Date.now() - new Date(row.last_seen).getTime() < ONLINE_MS;
+  if (!row.active || !row.last_seen) return false;
+  return Date.now() - new Date(row.last_seen).getTime() < STALE_MS;
 }
 
 function timeAgo(ts) {
