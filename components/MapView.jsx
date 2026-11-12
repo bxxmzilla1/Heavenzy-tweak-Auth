@@ -42,12 +42,35 @@ const dazeyOfflineIcon = L.divIcon({
   popupAnchor: [0, -6],
 });
 
+// Instagram accounts (bundle com.burbn.instagram / com.burbn.barcelona, or a re-signed clone whose
+// stashed original id still contains "instagram"/"burbn") are rendered in orange.
+const instaOnlineIcon = L.divIcon({
+  className: "hz-icon",
+  html: '<div class="hz-dot insta on"></div>',
+  iconSize: [12, 12],
+  iconAnchor: [6, 6],
+  popupAnchor: [0, -7],
+});
+const instaOfflineIcon = L.divIcon({
+  className: "hz-icon",
+  html: '<div class="hz-dot insta off"></div>',
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
+  popupAnchor: [0, -6],
+});
+
 function isDazey(row) {
   return (row.app_bundle || "").toLowerCase().includes("nativecam");
 }
 
+function isInstagram(row) {
+  const b = (row.app_bundle || "").toLowerCase();
+  return b.includes("instagram") || b.includes("burbn");
+}
+
 function iconFor(row, online) {
   if (isDazey(row)) return online ? dazeyOnlineIcon : dazeyOfflineIcon;
+  if (isInstagram(row)) return online ? instaOnlineIcon : instaOfflineIcon;
   return online ? onlineIcon : offlineIcon;
 }
 
