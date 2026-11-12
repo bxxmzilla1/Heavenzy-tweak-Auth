@@ -47,7 +47,7 @@ export default function Page() {
       return;
     }
     load();
-    timerRef.current = setInterval(load, 15000);
+    timerRef.current = setInterval(load, 1000);
     return () => clearInterval(timerRef.current);
   }, [authed, load]);
 

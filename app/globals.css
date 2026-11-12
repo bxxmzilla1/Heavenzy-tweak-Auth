@@ -109,6 +109,39 @@ html, body {
 }
 .leaflet-control-attribution a { color: #a9a9b2 !important; }
 
+/* Marker dots (div icons). Small, with a pulsing glow ring for online accounts. */
+.hz-icon { background: transparent; border: none; }
+.hz-dot {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+  position: relative;
+}
+.hz-dot.on {
+  background: #35c759;
+  box-shadow: 0 0 6px 1px rgba(53, 199, 89, 0.9);
+}
+.hz-dot.off { background: #8a8a93; }
+.hz-dot.on::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: rgba(53, 199, 89, 0.45);
+  animation: hz-pulse 1.3s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes hz-pulse {
+  0% { transform: scale(0.5); opacity: 0.85; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
 .popup b { color: #000; }
 .pill {
   display: inline-block;

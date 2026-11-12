@@ -1,10 +1,27 @@
 "use client";
 
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
 
 const ONLINE_MS = 2 * 60 * 1000; // "online" if seen in the last 2 minutes
+
+// Stable icon instances so the CSS pulse animation isn't restarted on every 1s refresh.
+const onlineIcon = L.divIcon({
+  className: "hz-icon",
+  html: '<div class="hz-dot on"></div>',
+  iconSize: [12, 12],
+  iconAnchor: [6, 6],
+  popupAnchor: [0, -7],
+});
+const offlineIcon = L.divIcon({
+  className: "hz-icon",
+  html: '<div class="hz-dot off"></div>',
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
+  popupAnchor: [0, -6],
+});
 
 function isOnline(row) {
   if (!row.last_seen) return false;
@@ -50,13 +67,11 @@ export default function MapView({ rows }) {
       <FitBounds points={points} />
       {located.map((r) => {
         const online = isOnline(r);
-        const color = online ? "#35c759" : "#8a8a93";
         return (
-          <CircleMarker
+          <Marker
             key={r.user_id}
-            center={[r.latitude, r.longitude]}
-            radius={9}
-            pathOptions={{ color: "#000", weight: 1, fillColor: color, fillOpacity: 0.9 }}
+            position={[r.latitude, r.longitude]}
+            icon={online ? onlineIcon : offlineIcon}
           >
             <Popup>
               <div className="popup" style={{ minWidth: 190 }}>
@@ -78,7 +93,7 @@ export default function MapView({ rows }) {
                 </div>
               </div>
             </Popup>
-          </CircleMarker>
+          </Marker>
         );
       })}
     </MapContainer>
