@@ -17,20 +17,36 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: "Supabase env vars are not configured." }, { status: 500 });
   }
 
-  const endpoint = `${url.replace(/\/$/, "")}/rest/v1/presence?select=*&order=last_seen.desc`;
-  const r = await fetch(endpoint, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-    },
+  const base = url.replace(/\/$/, "");
+  const headers = { apikey: key, Authorization: `Bearer ${key}` };
+
+  const r = await fetch(`${base}/rest/v1/presence?select=*&order=last_seen.desc`, {
+    headers,
     cache: "no-store",
   });
-
   if (!r.ok) {
     const text = await r.text();
     return NextResponse.json({ ok: false, error: `Supabase ${r.status}: ${text}` }, { status: 502 });
   }
-
   const rows = await r.json();
+
+  // Merge ban status from the GoTrue admin users list (banned_until lives in the auth schema).
+  const bannedById = {};
+  try {
+    const ur = await fetch(`${base}/auth/v1/admin/users?page=1&per_page=1000`, { headers, cache: "no-store" });
+    if (ur.ok) {
+      const uj = await ur.json();
+      const users = Array.isArray(uj) ? uj : uj.users || [];
+      for (const u of users) {
+        const until = u.banned_until ? new Date(u.banned_until).getTime() : 0;
+        bannedById[u.id] = until > Date.now();
+      }
+    }
+  } catch {}
+
+  for (const row of rows) {
+    row.banned = !!bannedById[row.user_id];
+  }
+
   return NextResponse.json({ ok: true, rows });
 }

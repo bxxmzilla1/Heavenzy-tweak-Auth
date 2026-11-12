@@ -14,6 +14,8 @@ export default function Page() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [rows, setRows] = useState([]);
+  const [view, setView] = useState("map");
+  const [busyBan, setBusyBan] = useState(null);
   const timerRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -81,6 +83,26 @@ export default function Page() {
     setRows([]);
   }
 
+  async function toggleBan(row) {
+    const ban = !row.banned;
+    if (ban && !confirm(`Ban ${row.email || row.user_id}? They'll be locked back to the sign-in screen.`)) return;
+    setBusyBan(row.user_id);
+    try {
+      const r = await fetch("/api/ban", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: row.user_id, ban }),
+      });
+      const j = await r.json();
+      if (!j.ok) alert(j.error || "Failed");
+      // Optimistic: reflect immediately, then the next poll confirms.
+      setRows((prev) => prev.map((x) => (x.user_id === row.user_id ? { ...x, banned: ban } : x)));
+      load();
+    } finally {
+      setBusyBan(null);
+    }
+  }
+
   if (!authed) {
     return (
       <div className="gate">
@@ -120,6 +142,9 @@ export default function Page() {
           <b>{onlineCount}</b> online · {rows.length} total
         </span>
         <span className="spacer" />
+        <button className="ghost" onClick={() => setView(view === "map" ? "list" : "map")}>
+          {view === "map" ? "List" : "Map"}
+        </button>
         <button className="ghost" onClick={load}>
           Refresh
         </button>
@@ -127,9 +152,77 @@ export default function Page() {
           Lock
         </button>
       </div>
-      <div className="map-wrap">
-        <MapView rows={rows} />
-      </div>
+      {view === "map" ? (
+        <div className="map-wrap">
+          <MapView rows={rows} />
+        </div>
+      ) : (
+        <ListView rows={rows} onToggleBan={toggleBan} busyBan={busyBan} />
+      )}
+    </div>
+  );
+}
+
+function isOnlineRow(r) {
+  return r.active && r.last_seen && Date.now() - new Date(r.last_seen).getTime() < STALE_MS;
+}
+
+function timeAgo(ts) {
+  if (!ts) return "never";
+  const s = Math.max(0, Math.floor((Date.now() - new Date(ts).getTime()) / 1000));
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+function ListView({ rows, onToggleBan, busyBan }) {
+  if (!rows.length) {
+    return <div className="list-empty">No accounts have checked in yet.</div>;
+  }
+  return (
+    <div className="list-wrap">
+      <table className="list">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Account</th>
+            <th>Location</th>
+            <th>App</th>
+            <th>Last seen</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const online = isOnlineRow(r);
+            return (
+              <tr key={r.user_id} className={r.banned ? "banned-row" : ""}>
+                <td>
+                  {r.banned ? (
+                    <span className="pill ban">BANNED</span>
+                  ) : (
+                    <span className={`pill ${online ? "on" : "off"}`}>{online ? "ONLINE" : "OFFLINE"}</span>
+                  )}
+                </td>
+                <td>{r.email || r.user_id}</td>
+                <td>{[r.city, r.country].filter(Boolean).join(", ") || "—"}</td>
+                <td>{r.app_bundle || "—"}</td>
+                <td>{timeAgo(r.last_seen)}</td>
+                <td>
+                  <button
+                    className={`ban-btn ${r.banned ? "unban" : "ban"}`}
+                    disabled={busyBan === r.user_id}
+                    onClick={() => onToggleBan(r)}
+                  >
+                    {busyBan === r.user_id ? "…" : r.banned ? "Unban" : "Ban"}
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

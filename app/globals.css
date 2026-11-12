@@ -153,3 +153,39 @@ html, body {
 }
 .pill.on { background: var(--online); }
 .pill.off { background: var(--offline); }
+.pill.ban { background: #e0564f; }
+
+/* List view */
+.list-wrap { flex: 1; overflow: auto; }
+.list-empty { padding: 40px; text-align: center; color: var(--muted); }
+.list { width: 100%; border-collapse: collapse; font-size: 14px; }
+.list th, .list td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid #202026;
+  white-space: nowrap;
+}
+.list th {
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.list tbody tr:hover { background: #1b1b20; }
+.banned-row td:nth-child(2) { color: #e0564f; }
+.ban-btn {
+  border: 0;
+  border-radius: 8px;
+  height: 32px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ban-btn.ban { background: #e0564f; color: #fff; }
+.ban-btn.unban { background: transparent; border: 1px solid #3a3a42; color: var(--text); }
+.ban-btn:disabled { opacity: 0.6; cursor: default; }
