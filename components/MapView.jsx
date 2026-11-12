@@ -43,8 +43,9 @@ export default function MapView({ rows }) {
   return (
     <MapContainer center={[20, 0]} zoom={2} minZoom={2} worldCopyJump scrollWheelZoom>
       <TileLayer
-        attribution='&copy; OpenStreetMap'
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        className="dark-tiles"
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <FitBounds points={points} />
       {located.map((r) => {

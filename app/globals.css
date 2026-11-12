@@ -98,6 +98,17 @@ html, body {
 .map-wrap { flex: 1; position: relative; }
 .leaflet-container { height: 100%; width: 100%; background: #0a0a0c; }
 
+/* Keyless dark map: invert the light OSM tiles. Only the tile layer is filtered, so the SVG
+   CircleMarkers (a separate pane) keep their real green/grey colors. */
+.dark-tiles {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.8);
+}
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: #8a8a93 !important;
+}
+.leaflet-control-attribution a { color: #a9a9b2 !important; }
+
 .popup b { color: #000; }
 .pill {
   display: inline-block;
