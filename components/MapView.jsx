@@ -25,6 +25,32 @@ const offlineIcon = L.divIcon({
   popupAnchor: [0, -6],
 });
 
+// Dazey (the native camera app, bundle com.bossing.nativecam) is rendered in purple so it's easy to
+// tell apart from the tweak (green). Same online pulse / dim-offline treatment, just a purple hue.
+const dazeyOnlineIcon = L.divIcon({
+  className: "hz-icon",
+  html: '<div class="hz-dot dazey on"></div>',
+  iconSize: [12, 12],
+  iconAnchor: [6, 6],
+  popupAnchor: [0, -7],
+});
+const dazeyOfflineIcon = L.divIcon({
+  className: "hz-icon",
+  html: '<div class="hz-dot dazey off"></div>',
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
+  popupAnchor: [0, -6],
+});
+
+function isDazey(row) {
+  return (row.app_bundle || "").toLowerCase().includes("nativecam");
+}
+
+function iconFor(row, online) {
+  if (isDazey(row)) return online ? dazeyOnlineIcon : dazeyOfflineIcon;
+  return online ? onlineIcon : offlineIcon;
+}
+
 function isOnline(row) {
   if (!row.active || !row.last_seen) return false;
   return Date.now() - new Date(row.last_seen).getTime() < STALE_MS;
@@ -73,7 +99,7 @@ export default function MapView({ rows }) {
           <Marker
             key={r.user_id}
             position={[r.latitude, r.longitude]}
-            icon={online ? onlineIcon : offlineIcon}
+            icon={iconFor(r, online)}
           >
             <Popup>
               <div className="popup" style={{ minWidth: 190 }}>
