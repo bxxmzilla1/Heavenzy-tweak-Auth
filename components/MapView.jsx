@@ -60,7 +60,8 @@ const instaOfflineIcon = L.divIcon({
 });
 
 function isDazey(row) {
-  return (row.app_bundle || "").toLowerCase().includes("nativecam");
+  const b = (row.app_bundle || "").toLowerCase();
+  return b.includes("nativecam") || b.includes("dazey");
 }
 
 function isInstagram(row) {
