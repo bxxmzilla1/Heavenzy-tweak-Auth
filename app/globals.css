@@ -209,3 +209,19 @@ html, body {
 .ban-btn.ban { background: #e0564f; color: #fff; }
 .ban-btn.unban { background: transparent; border: 1px solid #3a3a42; color: var(--text); }
 .ban-btn:disabled { opacity: 0.6; cursor: default; }
+
+.pill.inf { background: #e7b657; color: #111; margin-left: 8px; }
+.list td.actions { display: flex; gap: 8px; }
+.inf-btn {
+  border: 1px solid #e7b657;
+  border-radius: 8px;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #e7b657;
+}
+.inf-btn.on { background: #e7b657; color: #111; }
+.inf-btn:disabled { opacity: 0.6; cursor: default; }

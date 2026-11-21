@@ -16,6 +16,7 @@ export default function Page() {
   const [rows, setRows] = useState([]);
   const [view, setView] = useState("map");
   const [busyBan, setBusyBan] = useState(null);
+  const [busyInfinite, setBusyInfinite] = useState(null);
   const timerRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -103,6 +104,32 @@ export default function Page() {
     }
   }
 
+  async function toggleInfinite(row) {
+    const infinite = !row.infinite;
+    const who = row.email || row.user_id;
+    const prompt = infinite
+      ? `Give ${who} Infinite access? They can stay signed in on any number of devices and are only signed out by a ban.`
+      : `Remove Infinite access from ${who}? The one-device limit applies again.`;
+    if (!confirm(prompt)) return;
+    setBusyInfinite(row.user_id);
+    try {
+      const r = await fetch("/api/infinite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: row.user_id, infinite }),
+      });
+      const j = await r.json();
+      if (!j.ok) {
+        alert(j.error || "Failed");
+        return;
+      }
+      setRows((prev) => prev.map((x) => (x.user_id === row.user_id ? { ...x, infinite } : x)));
+      load();
+    } finally {
+      setBusyInfinite(null);
+    }
+  }
+
   if (!authed) {
     return (
       <div className="gate">
@@ -157,7 +184,13 @@ export default function Page() {
           <MapView rows={rows} />
         </div>
       ) : (
-        <ListView rows={rows} onToggleBan={toggleBan} busyBan={busyBan} />
+        <ListView
+          rows={rows}
+          onToggleBan={toggleBan}
+          busyBan={busyBan}
+          onToggleInfinite={toggleInfinite}
+          busyInfinite={busyInfinite}
+        />
       )}
     </div>
   );
@@ -176,7 +209,7 @@ function timeAgo(ts) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-function ListView({ rows, onToggleBan, busyBan }) {
+function ListView({ rows, onToggleBan, busyBan, onToggleInfinite, busyInfinite }) {
   if (!rows.length) {
     return <div className="list-empty">No accounts have checked in yet.</div>;
   }
@@ -205,11 +238,22 @@ function ListView({ rows, onToggleBan, busyBan }) {
                     <span className={`pill ${online ? "on" : "off"}`}>{online ? "ONLINE" : "OFFLINE"}</span>
                   )}
                 </td>
-                <td>{r.email || r.user_id}</td>
+                <td>
+                  {r.email || r.user_id}
+                  {r.infinite && <span className="pill inf">∞ INFINITE</span>}
+                </td>
                 <td>{[r.city, r.country].filter(Boolean).join(", ") || "—"}</td>
                 <td>{r.app_bundle || "—"}</td>
                 <td>{timeAgo(r.last_seen)}</td>
-                <td>
+                <td className="actions">
+                  <button
+                    className={`inf-btn ${r.infinite ? "on" : ""}`}
+                    disabled={busyInfinite === r.user_id}
+                    onClick={() => onToggleInfinite(r)}
+                    title={r.infinite ? "Remove Infinite access" : "Give Infinite access"}
+                  >
+                    {busyInfinite === r.user_id ? "…" : r.infinite ? "∞ Infinite" : "Infinite"}
+                  </button>
                   <button
                     className={`ban-btn ${r.banned ? "unban" : "ban"}`}
                     disabled={busyBan === r.user_id}
