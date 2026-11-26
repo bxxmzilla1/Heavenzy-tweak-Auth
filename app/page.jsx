@@ -17,6 +17,9 @@ export default function Page() {
   const [view, setView] = useState("map");
   const [busyBan, setBusyBan] = useState(null);
   const [busyInfinite, setBusyInfinite] = useState(null);
+  const [busyDelete, setBusyDelete] = useState(null);
+  const [signups, setSignups] = useState(null); // true | false | null (unknown / not set up)
+  const [busySignups, setBusySignups] = useState(false);
   const timerRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -53,6 +56,65 @@ export default function Page() {
     timerRef.current = setInterval(load, 1000);
     return () => clearInterval(timerRef.current);
   }, [authed, load]);
+
+  useEffect(() => {
+    if (!authed) return;
+    (async () => {
+      try {
+        const r = await fetch("/api/signups", { cache: "no-store" });
+        const j = await r.json();
+        setSignups(j.ok ? j.enabled : null);
+      } catch {
+        setSignups(null);
+      }
+    })();
+  }, [authed]);
+
+  async function toggleSignups() {
+    const enabled = !signups;
+    const prompt = enabled
+      ? "Open sign-ups? Anyone can create a Heavenzy account again."
+      : "Pause sign-ups? New people trying to sign up will be told to wait until you open them again. Existing accounts are not affected.";
+    if (!confirm(prompt)) return;
+    setBusySignups(true);
+    try {
+      const r = await fetch("/api/signups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled }),
+      });
+      const j = await r.json();
+      if (!j.ok) {
+        alert(j.error || "Failed");
+        return;
+      }
+      setSignups(j.enabled);
+    } finally {
+      setBusySignups(false);
+    }
+  }
+
+  async function deleteAccount(row) {
+    const who = row.email || row.user_id;
+    if (!confirm(`Permanently delete ${who}? Their saved containers are deleted too and they're signed out on every device. This can't be undone.`)) return;
+    setBusyDelete(row.user_id);
+    try {
+      const r = await fetch("/api/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: row.user_id }),
+      });
+      const j = await r.json();
+      if (!j.ok) {
+        alert(j.error || "Failed");
+        return;
+      }
+      setRows((prev) => prev.filter((x) => x.user_id !== row.user_id));
+      load();
+    } finally {
+      setBusyDelete(null);
+    }
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -169,6 +231,14 @@ export default function Page() {
           <b>{onlineCount}</b> online · {rows.length} total
         </span>
         <span className="spacer" />
+        <button
+          className={`signup-btn ${signups === false ? "paused" : signups ? "open" : ""}`}
+          onClick={toggleSignups}
+          disabled={busySignups || signups === null}
+          title={signups === null ? "Run supabase/signup_gate.sql in Supabase to enable this" : ""}
+        >
+          {busySignups ? "…" : signups === null ? "Sign-ups: ?" : signups ? "Sign-ups open" : "Sign-ups paused"}
+        </button>
         <button className="ghost" onClick={() => setView(view === "map" ? "list" : "map")}>
           {view === "map" ? "List" : "Map"}
         </button>
@@ -190,6 +260,8 @@ export default function Page() {
           busyBan={busyBan}
           onToggleInfinite={toggleInfinite}
           busyInfinite={busyInfinite}
+          onDelete={deleteAccount}
+          busyDelete={busyDelete}
         />
       )}
     </div>
@@ -209,7 +281,7 @@ function timeAgo(ts) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-function ListView({ rows, onToggleBan, busyBan, onToggleInfinite, busyInfinite }) {
+function ListView({ rows, onToggleBan, busyBan, onToggleInfinite, busyInfinite, onDelete, busyDelete }) {
   if (!rows.length) {
     return <div className="list-empty">No accounts have checked in yet.</div>;
   }
@@ -260,6 +332,14 @@ function ListView({ rows, onToggleBan, busyBan, onToggleInfinite, busyInfinite }
                     onClick={() => onToggleBan(r)}
                   >
                     {busyBan === r.user_id ? "…" : r.banned ? "Unban" : "Ban"}
+                  </button>
+                  <button
+                    className="del-btn"
+                    disabled={busyDelete === r.user_id}
+                    onClick={() => onDelete(r)}
+                    title="Permanently delete this account"
+                  >
+                    {busyDelete === r.user_id ? "…" : "Delete"}
                   </button>
                 </td>
               </tr>

@@ -33,11 +33,12 @@ export async function GET() {
   // Merge ban status and Infinite access from the GoTrue admin users list (both live in the auth schema).
   const bannedById = {};
   const infiniteById = {};
+  let users = [];
   try {
     const ur = await fetch(`${base}/auth/v1/admin/users?page=1&per_page=1000`, { headers, cache: "no-store" });
     if (ur.ok) {
       const uj = await ur.json();
-      const users = Array.isArray(uj) ? uj : uj.users || [];
+      users = Array.isArray(uj) ? uj : uj.users || [];
       for (const u of users) {
         const until = u.banned_until ? new Date(u.banned_until).getTime() : 0;
         bannedById[u.id] = until > Date.now();
@@ -45,6 +46,13 @@ export async function GET() {
       }
     }
   } catch {}
+
+  // Accounts that signed up but never checked in have no presence row; list them too so they can be
+  // managed (the map skips rows without coordinates).
+  const seen = new Set(rows.map((r) => r.user_id));
+  for (const u of users) {
+    if (!seen.has(u.id)) rows.push({ user_id: u.id, email: u.email, active: false, last_seen: null });
+  }
 
   for (const row of rows) {
     row.banned = !!bannedById[row.user_id];

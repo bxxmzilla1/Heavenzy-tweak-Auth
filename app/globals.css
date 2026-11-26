@@ -225,3 +225,32 @@ html, body {
 }
 .inf-btn.on { background: #e7b657; color: #111; }
 .inf-btn:disabled { opacity: 0.6; cursor: default; }
+
+.del-btn {
+  border: 1px solid #e0564f;
+  border-radius: 8px;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: #e0564f;
+}
+.del-btn:hover { background: #e0564f; color: #fff; }
+.del-btn:disabled { opacity: 0.6; cursor: default; }
+
+.signup-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #3a3a42;
+  color: var(--text);
+}
+.signup-btn.open { border-color: var(--online); color: var(--online); }
+.signup-btn.paused { background: #e0564f; border-color: #e0564f; color: #fff; }
+.signup-btn:disabled { opacity: 0.6; cursor: default; }
